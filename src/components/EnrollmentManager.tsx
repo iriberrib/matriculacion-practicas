@@ -298,15 +298,134 @@ export function EnrollmentManager() {
         </div>
       )}
 
+      {/* List Filters Bar - Shared for both views */}
+      <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 space-y-4 md:space-y-0 md:flex md:items-center md:gap-4 md:flex-wrap">
+        {/* Status Filters */}
+        <div className="flex gap-2 flex-wrap">
+          {['all', 'active', 'completed', 'dropped'].map((status) => (
+            <button
+              key={status}
+              onClick={() => setFilterStatus(status)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterStatus === status
+                ? 'bg-gray-800 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 box-border border border-transparent'
+                } ${filterStatus === status && status === 'active' ? '!bg-blue-600' : ''}
+                  ${filterStatus === status && status === 'completed' ? '!bg-green-600' : ''}
+                  ${filterStatus === status && status === 'dropped' ? '!bg-red-600' : ''}
+                `}
+            >
+              {status === 'all' ? 'Todas' : getStatusText(status)}
+            </button>
+          ))}
+        </div>
+
+        <div className="border-l border-gray-300 h-6 hidden md:block mx-2"></div>
+
+        {/* Search Input */}
+        <div className="flex-1 relative min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Buscar alumno, DNI o materia..."
+            value={generalSearch}
+            onChange={(e) => setGeneralSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+          />
+        </div>
+
+        {/* Date Range */}
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-gray-500" />
+          <input
+            type="date"
+            value={dateRange.start}
+            onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+            className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500"
+          />
+          <span className="text-gray-400">-</span>
+          <input
+            type="date"
+            value={dateRange.end}
+            onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+            className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500"
+          />
+        </div>
+      </div>
+
       {/* Grid View */}
       {viewMode === 'grid' && (
-        <div className="space-y-4">
-          <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
-            {/* Note: Grid view logic retained but simplified for brevity in this redesign, focusing on requested changes */}
-            <div className="p-4 text-center text-gray-500">
-              Funcionalidad de Vista Grid sin cambios mayores (Usar Vista Simple para nuevas características)
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          {filteredEnrollments.length === 0 ? (
+            <div className="col-span-full bg-white p-8 rounded-lg shadow-md border border-gray-200 text-center text-gray-500">
+              No hay inscripciones que coincidan con los filtros
             </div>
-          </div>
+          ) : (
+            filteredEnrollments.map((enrollment) => (
+              <div key={enrollment.id} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="p-4 border-b border-gray-100 bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">
+                        {enrollment.students?.last_name}, {enrollment.students?.first_name}
+                      </h4>
+                      <div className="text-sm text-gray-500 mt-1">
+                        DNI: {enrollment.students?.dni}
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(enrollment.status)}`}>
+                      {getStatusIcon(enrollment.status)}
+                      <span className="hidden sm:inline">{getStatusText(enrollment.status)}</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 space-y-3">
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Materia</div>
+                    <div className="font-medium text-gray-800">{enrollment.subjects?.name}</div>
+                    <div className="text-sm text-gray-600">
+                      {enrollment.subjects?.year}° Año - {enrollment.subjects?.semester}° Cuat.
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Inscripción</div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      {new Date(enrollment.enrollment_date).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex justify-end gap-2">
+                  {enrollment.status !== 'active' && (
+                    <button
+                      onClick={() => handleChangeStatus(enrollment.id, 'active')}
+                      className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-xs font-medium"
+                    >
+                      Activar
+                    </button>
+                  )}
+                  {enrollment.status !== 'completed' && (
+                    <button
+                      onClick={() => handleChangeStatus(enrollment.id, 'completed')}
+                      className="px-3 py-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-xs font-medium"
+                    >
+                      Completar
+                    </button>
+                  )}
+                  {enrollment.status !== 'dropped' && (
+                    <button
+                      onClick={() => handleChangeStatus(enrollment.id, 'dropped')}
+                      className="px-3 py-1.5 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs font-medium"
+                    >
+                      Abandonar
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -458,60 +577,6 @@ export function EnrollmentManager() {
               </form>
             </div>
           )}
-
-          {/* List Filters Bar */}
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 space-y-4 md:space-y-0 md:flex md:items-center md:gap-4 md:flex-wrap">
-            {/* Status Filters */}
-            <div className="flex gap-2 flex-wrap">
-              {['all', 'active', 'completed', 'dropped'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => setFilterStatus(status)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${filterStatus === status
-                    ? 'bg-gray-800 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 box-border border border-transparent'
-                    } ${filterStatus === status && status === 'active' ? '!bg-blue-600' : ''}
-                      ${filterStatus === status && status === 'completed' ? '!bg-green-600' : ''}
-                      ${filterStatus === status && status === 'dropped' ? '!bg-red-600' : ''}
-                    `}
-                >
-                  {status === 'all' ? 'Todas' : getStatusText(status)}
-                </button>
-              ))}
-            </div>
-
-            <div className="border-l border-gray-300 h-6 hidden md:block mx-2"></div>
-
-            {/* Search Input */}
-            <div className="flex-1 relative min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Buscar alumno, DNI o materia..."
-                value={generalSearch}
-                onChange={(e) => setGeneralSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Date Range */}
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-gray-500" />
-              <input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500"
-              />
-              <span className="text-gray-400">-</span>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                className="px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-          </div>
 
           {/* Table */}
           <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden mt-4">
