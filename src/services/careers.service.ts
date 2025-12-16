@@ -111,5 +111,14 @@ export const careersService = {
 
     if (error) throw error;
     return count || 0;
+  },
+
+  async getAllCareerSubjects() {
+    const { data, error } = await supabase
+      .from('career_subjects')
+      .select('*');
+
+    if (error) throw error;
+    return data;
   }
 };

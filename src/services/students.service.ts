@@ -105,5 +105,29 @@ export const studentsService = {
 
     if (error) throw error;
     return data;
+  },
+
+  async search(query: string, careerId?: string) {
+    let queryBuilder = supabase
+      .from('students')
+      .select(`
+        *,
+        careers:current_career_id (
+          id,
+          title
+        )
+      `)
+      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,dni.ilike.%${query}%`)
+      .order('last_name', { ascending: true })
+      .limit(20);
+
+    if (careerId) {
+      queryBuilder = queryBuilder.eq('current_career_id', careerId);
+    }
+
+    const { data, error } = await queryBuilder;
+
+    if (error) throw error;
+    return data;
   }
 };
